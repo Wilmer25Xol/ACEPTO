@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>¿Quieres ser mi novia? 💛</title>
+  <style>
+    :root{
+      --bg1:#fff7d6; --bg2:#ffeaa7; --bg3:#ffd166;
+      --card:#ffffff; --shadow:0 20px 60px rgba(0,0,0,.15);
+      --text:#1f2937; --muted:#6b7280; --accent:#fbbf24; --accent-2:#f59e0b;
+      --yes:#22c55e; --no:#ef4444; --heart:#f59e0b;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(60vmax 60vmax at -10% -10%, var(--bg2), transparent 60%),
+        radial-gradient(60vmax 60vmax at 110% -10%, var(--bg3), transparent 60%),
+        linear-gradient(180deg, var(--bg1), #fffbe8 65%);
+      overflow:hidden;
+    }
+
+    /* corazones de fondo */
+    .bg-hearts{
+      position:fixed; inset:0; pointer-events:none; overflow:hidden;
+    }
+    .bg-hearts span{
+      position:absolute; left:var(--x); top:var(--y);
+      font-size:var(--s,16px); opacity:.18; filter: drop-shadow(0 2px 4px rgba(0,0,0,.15));
+      animation: float 12s ease-in-out infinite;
+      color:#f2b40b;
+    }
+    @keyframes float{
+      0%{ transform: translateY(0) }
+      50%{ transform: translateY(-24px) }
+      100%{ transform: translateY(0) }
+    }
+
+    .wrap{ position:relative; z-index:1; min-height:100%; display:grid; place-items:center; padding:20px }
+    .card{
+      background:var(--card); border-radius:24px; box-shadow:var(--shadow);
+      padding:28px; width:min(680px, 92vw); text-align:center;
+      border:1px solid #fde68a66;
+    }
+    h1{ margin:0 0 8px; font-size:clamp(24px, 5vw, 36px); letter-spacing:.02em }
+    p.sub{ margin:0; color:var(--muted) }
+
+    .btns{
+      position:relative; margin-top:24px; height:120px;
+    }
+    .btn{ appearance:none; border:0; padding:12px 18px; border-radius:999px; font-weight:800;
+      box-shadow:0 10px 0 rgba(0,0,0,.08); cursor:pointer; transition: transform .12s, box-shadow .12s, background .2s; user-select:none;
+    }
+    .btn:active{ transform: translateY(1px) }
+    #btnSi{ background:linear-gradient(180deg, #bbf7d0, #86efac); color:#064e3b; border:1px solid #10b981 }
+    #btnSi:hover{ box-shadow:0 12px 0 rgba(34,197,94,.25) }
+    /* el No empieza en pos absoluta para poder huir */
+    #btnNo{ position:absolute; left:58%; top:28px; background:linear-gradient(180deg, #fecaca, #fca5a5); color:#7f1d1d; border:1px solid #ef4444; }
+
+    .thanks{ display:none; margin-top:20px; font-size:clamp(20px, 4vw, 32px); font-weight:900; color:#3a2500 }
+    .thanks.show{ display:block; animation: pop .6s ease-out both }
+    @keyframes pop{ 0%{ transform:scale(.7); opacity:0 } 100%{ transform:scale(1); opacity:1 } }
+
+    /* confeti */
+    .confetti{ position:fixed; inset:0; pointer-events:none; overflow:hidden }
+    .piece{ position:absolute; width:10px; height:10px; border-radius:2px; background:var(--c,#fbbf24); opacity:.9; transform: translateY(-20vh) rotate(0deg); animation: fall var(--d)s linear forwards; }
+    @keyframes fall{
+      to{ transform: translateY(120vh) rotate(720deg); opacity:1 }
+    }
+
+    .footer{ margin-top:12px; font-size:12px; color:#9ca3af }
+  </style>
+</head>
+<body>
+  <div class="bg-hearts" id="bg"></div>
+
+  <div class="wrap">
+    <div class="card">
+      <h1>¿Quieres ser mi novia? 💛</h1>
+      <p class="sub">Prometo flores amarillas, dulces y muchos abrazos. ¿Aceptas?</p>
+
+      <div class="btns" id="btnArea">
+        <button id="btnSi" class="btn">Sí, acepto 💛</button>
+        <button id="btnNo" class="btn" tabindex="-1" aria-hidden="true">No</button>
+      </div>
+
+      <div class="thanks" id="thanks">¡Gracias! Me haces la persona más feliz del mundo ✨</div>
+      <div class="footer">(Pista: el botón rojo es tímido y se escapa 😅)</div>
+    </div>
+  </div>
+
+  <div class="confetti" id="confetti"></div>
+
+  <script>
+    // corazones de fondo suaves
+    (function hearts(){
+      const bg = document.getElementById('bg');
+      const H = 26;
+      for(let i=0;i<H;i++){
+        const s = document.createElement('span');
+        s.textContent = '❤';
+        s.style.setProperty('--x', Math.random()*100 + 'vw');
+        s.style.setProperty('--y', Math.random()*100 + 'vh');
+        s.style.setProperty('--s', (12+Math.random()*24) + 'px');
+        s.style.animationDelay = (Math.random()*6)+'s';
+        bg.appendChild(s);
+      }
+    })();
+
+    const area = document.getElementById('btnArea');
+    const btnSi = document.getElementById('btnSi');
+    const btnNo = document.getElementById('btnNo');
+    const thanks = document.getElementById('thanks');
+    const confetti = document.getElementById('confetti');
+
+    // Evitar clic en NO: huye cuando el puntero se acerca o intenta tocarlo
+    function moveNo(){
+      const rectArea = area.getBoundingClientRect();
+      const pad = 8;
+      const x = Math.random() * (rectArea.width - btnNo.offsetWidth - pad*2) + pad;
+      const y = Math.random() * (rectArea.height - btnNo.offsetHeight - pad*2) + pad;
+      btnNo.style.left = x + 'px';
+      btnNo.style.top  = y + 'px';
+    }
+
+    function distanceTo(el, x, y){
+      const r = el.getBoundingClientRect();
+      const cx = r.left + r.width/2; const cy = r.top + r.height/2;
+      const dx = cx - x; const dy = cy - y; return Math.hypot(dx, dy);
+    }
+
+    function evade(e){
+      const d = distanceTo(btnNo, e.clientX, e.clientY);
+      if(d < 140) moveNo();
+    }
+
+    // Mueve también si el usuario llega a presionarlo (por si acaso)
+    btnNo.addEventListener('pointerdown', (e)=>{ e.preventDefault(); moveNo(); });
+    window.addEventListener('pointermove', evade, {passive:true});
+    window.addEventListener('resize', moveNo);
+    // primera posición aleatoria
+    setTimeout(moveNo, 120);
+
+    // Sí = mostrar gracias + confeti
+    btnSi.addEventListener('click', ()=>{
+      thanks.classList.add('show');
+      // desactivar botones
+      btnSi.disabled = true; btnNo.style.display = 'none';
+      launchConfetti();
+    });
+
+    function launchConfetti(){
+      const colors = ['#fbbf24','#f59e0b','#fde68a','#f87171','#34d399'];
+      const N = 140;
+      const w = window.innerWidth;
+      for(let i=0;i<N;i++){
+        const p = document.createElement('div');
+        p.className = 'piece';
+        p.style.left = (Math.random()*w) + 'px';
+        p.style.setProperty('--d', (4+Math.random()*3).toFixed(2));
+        p.style.background = colors[i % colors.length];
+        p.style.transform = `translateY(-20vh) rotate(${Math.random()*360}deg)`;
+        confetti.appendChild(p);
+        setTimeout(()=> p.remove(), 8000);
+      }
+    }
+  </script>
+</body>
+</html>
